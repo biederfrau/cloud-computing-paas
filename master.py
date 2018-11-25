@@ -51,19 +51,20 @@ class WaiterThread(threading.Thread):
 
 wait = WaiterThread()
 
-# called when a worker comes to life
+# called when a worker comes to life---consider also using a queue for this.
 @post('/worker')
 def register_new_worker():
     ip = request.environ.get('REMOTE_ADDR')
     workers.append(ip)
     response.status = 204
 
+# ditto
 @delete('/worker')
 def deregister_worker():
     ip = request.environ.get('REMOTE_ADDR')
     workers.remove(ip)
 
-# called when url is entered
+# called when url is entered from the web frontend
 @post('/crawl')
 def start_crawl():
     url = request.forms.get('url')
@@ -78,6 +79,7 @@ def start_crawl():
 
     wait.start()
 
+# try to stop a crawl process. note that purge can only happen every 60s
 @delete('/crawl')
 def stop_crawl():
     try:
@@ -93,13 +95,13 @@ def stop_crawl():
     wait.join()
     wait = WaiterThread()
 
-# queried to get progress
+# queried to get progress. used by frontend to visualize
 @get('/progress')
 def get_progress():
     progress = { 'workers': workers, 'edges': edges }
     return json.dumps(progress)
 
-# replace later with nginx
+# replace later with nginx or something
 @get('/static/<filepath:path>')
 def serve_static(filepath):
     return static_file(filepath, root='./static')
