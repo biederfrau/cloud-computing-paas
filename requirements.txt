@@ -1,0 +1,5 @@
+validators==0.12.3
+requests==2.18.4
+bottle==0.12.13
+boto3==1.9.42
+beautifulsoup4==4.6.3
