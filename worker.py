@@ -2,15 +2,15 @@
 
 from bs4 import BeautifulSoup
 
+import atexit
 import boto3
+import json
+import pretty
 import requests
 from requests.exceptions import MissingSchema
 import sys
-import validators
-
-import json
 import time
-import atexit
+import validators
 
 sqs       = boto3.resource('sqs')
 queue_in  = sqs.get_queue_by_name(QueueName='queue-in')
@@ -47,7 +47,6 @@ while True:
                 if href.startswith('/'): href = url + href
                 if not validators.url(href): continue
 
-                print(f"### pushing valid url {href} at depth {depth+1}")
                 msg = { 'source': url, 'sink': href, 'depth': depth + 1 }
                 queue_out.send_message(MessageBody=json.dumps(msg))
 
