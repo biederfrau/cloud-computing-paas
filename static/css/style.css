@@ -1,0 +1,56 @@
+.tab {
+    background-color: lightgrey;
+    display: inline-block;
+
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+
+    padding-left: 1em;
+    padding-right: 1em;
+    margin-right: 0px;
+    margin-bottom: -0.6px;
+
+    border-left: 0.1em solid grey;
+    border-right: 0.1em solid grey;
+    border-top: 0.1em solid grey;
+    border-bottom: 0.05em solid grey;
+
+    cursor: pointer;
+}
+
+.tab.active {
+    background-color: white;
+    border-bottom: 0em solid grey;
+}
+
+.info.active {
+    display: block;
+}
+
+.info {
+    height: 73vh;
+    display: none;
+    background-color: white;
+}
+
+body {
+    background-color: #efefef;
+}
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 3px;
+}
+
+.node text { font: 15px sans-serif; }
+
+.node--internal text {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}

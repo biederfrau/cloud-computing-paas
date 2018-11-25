@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="author" content="">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+  </head>
+
+  <body>
+    <div class="mx-2 my-3 container">
+      <form>
+        <div class="form-group">
+          <label for="url">root url</label>
+          <input type="url" class="form-control" name="url" id="url" placeholder="enter url">
+        </div>
+        <div class="form-group">
+          <label for="depth">depth</label>
+          <input type="number" class="form-control" name="depth" id="depth" placeholder="depth">
+        </div>
+
+        <div class="float-right">
+          <button id="stop" style="display: none;" class="stop btn btn-danger mr-1">Stop</input>
+          <button id="start" type="submit" class="btn btn-primary">Start</input>
+        </div>
+      </form>
+    </div>
+
+    <div style="margin-top: 60px;" class="mx-2">
+      <div class="tabs">
+        <div id="tab-nodes" class="tab active" onclick="show_nodes()">
+          <span>nodes</span>
+        </div>
+
+        <div id="tab-graph" class="tab" onclick="show_graph()">
+          <span>graph</span>
+        </div>
+      </div>
+
+      <div id="info-nodes" class="active info">
+        <svg width="100%" height="100%"></svg>
+      </div>
+
+      <div id="info-graph" class="info">
+        <svg width="100%" height="100%"><circle cx="10" cy="20" r="30" fill="red"/></svg>
+      </div>
+    </div>
+  </body>
+
+  <script src="/static/js/script.js"></script>
+</html>
