@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from bottle import get, post, delete, run, request, response, static_file
+from bottle import get, post, delete, run, request, response, static_file, default_app
 
 import boto3
 import json
@@ -106,4 +106,5 @@ def get_progress():
 def serve_static(filepath):
     return static_file(filepath, root='./static')
 
+application = default_app()
 run(host='localhost', port=8080)
