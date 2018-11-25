@@ -6,23 +6,30 @@ function update_progress(url) {
         let margin = { top: 40, right: 90, bottom: 50, left: 90 };
         let svg = d3.select("#info-nodes svg");
 
-        g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        let g = svg.select("g");
+        if(g.empty()) {
+            g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        }
 
-        let links = g.selectAll(".link").data(tree.descendants().slice(1))
-            .enter().append("path")
+        let links = g.selectAll(".link").data(tree.descendants().slice(1));
+        links.enter().append("path")
+            .merge(links)
             .attr("class", "link")
             .attr("d", d => "M" + d.x + "," + d.y + "C" + d.x + "," + (d.y + d.parent.y) / 2 + " " + d.parent.x + "," +  (d.y + d.parent.y) / 2 + " " + d.parent.x + "," + d.parent.y);
 
-        let nodes = g.selectAll(".node").data(tree.descendants())
-            .enter().append("g")
-            .classed("node", true)
-            .attr("transform", d => `translate(${d.x},${d.y})`);
+        links.exit().remove();
 
-        nodes.append("cirlce").attr("r", 10);
+        let nodes = g.selectAll(".node").data(tree.descendants());
+        let nodes_g = nodes.enter().append("g").classed("node", true)
 
-        nodes.append("text").attr("dy", ".35em").attr("y", d => d.children ? -20 : 20)
+        nodes_g.append("text")
+            .attr("dy", ".35em").attr("y", d => d.children ? -20 : 20)
             .style("text-anchor", "middle")
             .text(d => d.data.name);
+
+        nodes_g.merge(nodes).attr("transform", d => `translate(${d.x},${d.y})`);
+
+        nodes.exit().remove();
     });
 }
 
