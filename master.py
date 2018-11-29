@@ -5,27 +5,17 @@ import json
 import pretty
 
 from bottle import get, post, delete, run, request, response, static_file, default_app
-from polling_thread import PollingThread
+from polling_thread import PollingThread, WorkerPollingThread
 
-sqs       = boto3.resource('sqs')
-queue_in  = sqs.get_queue_by_name(QueueName='queue-in')
-queue_out = sqs.get_queue_by_name(QueueName='queue-out')
+sqs          = boto3.resource('sqs')
+queue_in     = sqs.get_queue_by_name(QueueName='queue-in')
+queue_out    = sqs.get_queue_by_name(QueueName='queue-out')
+queue_master = sqs.get_queue_by_name(QueueName='queue-master')
 
-workers   = []
-poll      = PollingThread(queue_in, queue_out)
+work = WorkerPollingThread(queue_master)
+poll = PollingThread(queue_in, queue_out)
 
-# called when a worker comes to life---consider also using a queue for this.
-@post('/worker')
-def register_new_worker():
-    ip = request.environ.get('REMOTE_ADDR')
-    workers.append(ip)
-    response.status = 204
-
-# ditto
-@delete('/worker')
-def deregister_worker():
-    ip = request.environ.get('REMOTE_ADDR')
-    workers.remove(ip)
+work.start()
 
 # called when url is entered from the web frontend
 @post('/crawl')
@@ -61,7 +51,7 @@ def stop_crawl():
 # queried to get progress. used by frontend to visualize
 @get('/progress')
 def get_progress():
-    progress = { 'workers': workers, 'edges': poll.edges() }
+    progress = { 'workers': work.workers(), 'edges': poll.edges() }
     return json.dumps(progress)
 
 # replace later with nginx or something

@@ -11,24 +11,20 @@ from requests.exceptions import MissingSchema
 import sys
 import time
 import validators
+import uuid
 
-sqs       = boto3.resource('sqs')
-queue_in  = sqs.get_queue_by_name(QueueName='queue-in')
-queue_out = sqs.get_queue_by_name(QueueName='queue-out')
+sqs          = boto3.resource('sqs')
+queue_in     = sqs.get_queue_by_name(QueueName='queue-in')
+queue_out    = sqs.get_queue_by_name(QueueName='queue-out')
+queue_master = sqs.get_queue_by_name(QueueName='queue-master')
 
-with open('.master') as f:
-    MASTER = f.readline().strip()
-    print(f"master is at {MASTER}")
-
-r = requests.post(f"{MASTER}/worker")
-if r.status_code != 204:
-    print("BAD")
-    sys.exit()
-
-atexit.register(lambda: requests.delete(f"{MASTER}/worker"))
+print("sending hello to master")
+random_id = str(uuid.uuid4())
+queue_master.send_message(MessageBody=json.dumps({"kind": "hello", "id": random_id}))
+atexit.register(lambda: queue_master.send_message(MessageBody=json.dumps({"kind": "bye", "id": random_id})))
 
 while True:
-    for message in queue_in.receive_messages(MaxNumberOfMessages=2, VisibilityTimeout=10):
+    for message in queue_in.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=10):
         msg = json.loads(message.body)
         url = msg['url']
         depth = msg['depth']
