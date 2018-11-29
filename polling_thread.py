@@ -84,5 +84,7 @@ class WorkerPollingThread(threading.Thread):
                     except ValueError:
                         pass # not in list does not matter
 
+            message.delete()
+
     def workers(self):
         return self._workers
