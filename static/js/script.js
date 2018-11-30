@@ -24,13 +24,14 @@ function draw_instances(json) {
     nodes_g.append("text")
         .attr("dy", ".35em").attr("y", d => d.children ? -20 : 20)
         .style("text-anchor", "middle")
-        .text(d => d.data.name);
+        .text((d, i) => d.data.name === "master" ? "master" : `worker${i}`);
 
     nodes_g.merge(nodes).attr("transform", d => `translate(${d.x},${d.y})`);
 
     nodes.exit().remove();
 }
 
+var no_edges = 0;
 function draw_graph(json) {
     let vertices = {}, edges = [], i = 0;
     _.each(json['edges'], tup => {
@@ -41,40 +42,56 @@ function draw_graph(json) {
         edges.push({ 'source': vertices[src], 'target': vertices[dst] });
     });
 
+    if(edges.length > 1000) {
+        console.log("truncating to 1000 edges");
+        edges = _.slice(edges, 0, 1000);
+    }
+
+    if(edges.length != no_edges) {
+        // need to update
+        no_edges = edges.length;
+    } else {
+        // no need to update, no new edges were added.
+        return;
+    }
+
     let hostnames = new Set();
-    console.log(vertices);
-    vertices = _.map(_.sortBy(Object.keys(vertices), x => vertices[x]), x => {
-        let hostname = new URL(x).hostname;
+    vertices = _.map(_.sortBy(Object.keys(vertices), x => vertices[x]), url => {
+        let hostname = new URL(url).hostname;
         hostnames.add(hostname);
-        return { 'name': x, 'hostname': hostname };
+        return { 'name': url, 'hostname': hostname, };
     });
 
     let data = { "nodes": vertices, "links": edges };
     let colors = d3.scaleOrdinal(d3.schemeCategory10).domain(Array.from(hostnames));
 
-    let c = cola.d3adaptor(d3).size([600, 400]),
+    let force = cola.d3adaptor(d3).size([600, 400]),
         svg = d3.select("#info-graph svg");
 
-    c.nodes(data.nodes)
+    force.nodes(data.nodes)
         .links(data.links)
         .jaccardLinkLengths(40, 0.7)
         .start(30);
 
+    console.log(data.nodes);
+    console.log(data.links);
     let links = svg.selectAll(".link").data(data.links);
     links.enter().append("line")
         .classed("link", true)
         .merge(links)
         .style("stroke-width", 1);
 
-    let nodes = svg.selectAll(".node").data(data.nodes);
+    let nodes = svg.selectAll(".node").data(data.nodes, d => d.name);
     nodes.enter().append("circle")
         .classed("node", true)
         .merge(nodes)
         .attr("r", 5)
         .style("fill", d => colors(d.hostname))
-        .call(c.drag);
+        .call(force.drag);
 
-    c.on("tick", () => {
+    nodes.enter().append("title").text(d => d.name);
+
+    force.on("tick", () => {
         svg.selectAll(".link")
             .attr("x1", d => d.source.x)
             .attr("y1", d => d.source.y)
