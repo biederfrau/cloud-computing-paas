@@ -12,6 +12,7 @@ import sys
 import time
 import validators
 import uuid
+from urllib.parse import urlparse
 
 sqs          = boto3.resource('sqs')
 queue_in     = sqs.get_queue_by_name(QueueName='queue-in')
@@ -35,16 +36,26 @@ while True:
             continue
 
         links = BeautifulSoup(r.text, 'lxml').find_all('a')
-
         for link in links:
             href = link.get('href')
-            if href:
-                # TODO better url handling
-                if href.startswith('/'): href = url + href
-                if not validators.url(href): continue
+            if not href: continue
 
-                msg = { 'source': url, 'sink': href, 'depth': depth + 1 }
-                queue_out.send_message(MessageBody=json.dumps(msg))
+            if not validators.url(href) and href != "./":
+                if href.startswith('/'): # root-relative url
+                    href = url + href
+                else: # relative url
+                    href = url + ('' if url.endswith('/') else '/') + href
+
+            if not validators.url(href):
+                print(f"{pretty.red('!!!')} bad url: {href}")
+                continue # give up if attempts to fix did not work
+
+            parsed_url = urlparse(href)
+            target = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
+
+            if url == target: continue # ignore self-links (e.g. to anchors on page)
+            msg = { 'source': url, 'sink': target, 'depth': depth + 1 }
+            queue_out.send_message(MessageBody=json.dumps(msg))
 
         message.delete()
 
