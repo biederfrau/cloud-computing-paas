@@ -40,7 +40,7 @@ while True:
             href = link.get('href')
             if not href: continue
 
-            if not validators.url(href) and href != "./":
+            if not validators.url(href) and href != "./": # try to fix
                 if href.startswith('/'): # root-relative url
                     href = url + href
                 else: # relative url
