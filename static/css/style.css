@@ -37,10 +37,9 @@ body {
     background-color: #efefef;
 }
 
-.node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 3px;
+circle.node {
+    stroke: #fff;
+    stroke-width: 2px;
 }
 
 .node text { font: 15px sans-serif; }
@@ -53,4 +52,18 @@ body {
   fill: none;
   stroke: #ccc;
   stroke-width: 2px;
+}
+
+.tooltip {
+    position: absolute;
+    z-index: 666;
+    background-color: #e5e4e2;
+    font-family: sans-serif;
+    padding: 0.5em;
+    border-radius: 5px;
+    font-size: 12px;
+    opacity: 0.8;
+    pointer-events: none;
+    text-align: justify;
+    max-width: 350px;
 }

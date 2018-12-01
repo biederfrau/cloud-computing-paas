@@ -1,3 +1,7 @@
+_.pushAll = (array, values) => {
+    array.push.apply(array, values);
+}
+
 function draw_instances(json) {
     let data = { "name": "master", "children": _.map(json['workers'], x => { return { "name": x } }) };
     let tree = d3.tree().size([600, 400])(d3.hierarchy(data));
@@ -31,65 +35,71 @@ function draw_instances(json) {
     nodes.exit().remove();
 }
 
-var no_edges = 0;
-function draw_graph(json) {
-    let vertices = {}, edges = [], i = 0;
-    _.each(json['edges'], tup => {
-        let src = tup[0], dst = tup[1];
-        if(vertices[src] === undefined) { vertices[src] = i++; }
-        if(vertices[dst] === undefined) { vertices[dst] = i++; }
+var prev_edges = [], prev_vertices = {}, hostnames = new Set(), i = 0, force;
+function draw_graph_faster(json) {
+    let vertices = {},
+        edges = [],
+        new_edges = _.differenceBy(json['edges'], prev_edges, x => `${x[0]}-${x[1]}`),
+        first_time = force === undefined;
 
+    if(new_edges.length === 0) { return; }
+    prev_edges = json['edges'];
+
+    _.each(new_edges, tup => {
+        let src = tup[0], dst = tup[1];
+        if(prev_vertices[src] === undefined) { prev_vertices[src] = i++; }
+        if(prev_vertices[dst] === undefined) { prev_vertices[dst] = i++; }
+
+        vertices[src] = prev_vertices[src];
+        vertices[dst] = prev_vertices[dst];
+
+        console.log("adding edge", src, "->", dst, "as", vertices[src], "->", vertices[dst]);
         edges.push({ 'source': vertices[src], 'target': vertices[dst] });
     });
 
-    if(edges.length > 1000) {
-        console.log("truncating to 1000 edges");
-        edges = _.slice(edges, 0, 1000);
-    }
-
-    if(edges.length != no_edges) {
-        // need to update
-        no_edges = edges.length;
-    } else {
-        // no need to update, no new edges were added.
-        return;
-    }
-
-    let hostnames = new Set();
     vertices = _.map(_.sortBy(Object.keys(vertices), x => vertices[x]), url => {
         let hostname = new URL(url).hostname;
         hostnames.add(hostname);
         return { 'name': url, 'hostname': hostname, };
     });
 
-    let data = { "nodes": vertices, "links": edges };
-    let colors = d3.scaleOrdinal(d3.schemeCategory10).domain(Array.from(hostnames));
-
-    let force = cola.d3adaptor(d3).size([600, 400]),
+    let colors = d3.scaleOrdinal(d3.schemeCategory10).domain(Array.from(hostnames)),
         svg = d3.select("#info-graph svg");
 
-    force.nodes(data.nodes)
-        .links(data.links)
-        .jaccardLinkLengths(40, 0.7)
-        .start(30);
+    if(first_time) {
+        console.log("initializing");
+        force = cola.d3adaptor(d3).size([600, 400]).jaccardLinkLengths(40,0.7).handleDisconnected(false);
+        force.nodes(vertices).links(edges).start(30);
+    } else {
+        console.log("updating");
 
-    console.log(data.nodes);
-    console.log(data.links);
-    let links = svg.selectAll(".link").data(data.links);
-    links.enter().append("line")
+        _.pushAll(force.nodes(), _.differenceBy(vertices, force.nodes(), 'name'));
+        _.pushAll(force.links(), edges);
+
+        force.start(30);
+    }
+
+    let links = svg.selectAll(".link").data(force.links());
+    links.enter().insert("line", ".node")
         .classed("link", true)
         .merge(links)
-        .style("stroke-width", 1);
+        .style("stroke-width", 2);
 
-    let nodes = svg.selectAll(".node").data(data.nodes, d => d.name);
+    let nodes = svg.selectAll(".node").data(force.nodes(), d => d.name);
     nodes.enter().append("circle")
         .classed("node", true)
         .merge(nodes)
-        .attr("r", 5)
+        .attr("r", 8)
         .style("fill", d => colors(d.hostname))
-        .call(force.drag);
-
-    nodes.enter().append("title").text(d => d.name);
+        .call(force.drag)
+        .on("mouseenter", d => {
+            d3.select("body").append("div")
+                .attr("id", "tooltip")
+                .classed("tooltip", true)
+                .style("top", d3.event.pageY + "px").style("left", d3.event.pageX + 10 + "px")
+                .html(`<b>${d.name}</b>`)
+        })
+        .on("mouseleave", () => d3.select("#tooltip").remove());
 
     force.on("tick", () => {
         svg.selectAll(".link")
@@ -104,10 +114,10 @@ function draw_graph(json) {
     });
 }
 
-function update_progress(url) {
+function update_progress(url, first_time=false) {
     fetch(url).then(response => response.json()).then(json => {
         draw_instances(json);
-        draw_graph(json);
+        draw_graph_faster(json, first_time);
     });
 }
 
@@ -127,6 +137,7 @@ function show_graph() {
     $("#info-nodes").removeClass("active");
 }
 
+let updating_interval;
 $("#start").on("click", e => {
     e.preventDefault();
 
@@ -139,7 +150,8 @@ $("#start").on("click", e => {
             $("#start").attr("disabled", true);
             $(".stop").show()
 
-            setInterval(update_progress, 1000, '/progress');
+            setTimeout(update_progress, 1000, '/progress', true);
+            updating_interval = setInterval(update_progress, 10000, '/progress');
         } else {
             alert("error: did not start crawl");
         }
@@ -155,6 +167,8 @@ $("#stop").on("click", e => {
         if(response.ok) {
             $(".stop").hide();
             alert("Please note that stopping is only possible every 60 seconds.");
+
+            clearInterval(updating_interval);
             $("#start").attr("disabled", false);
         } else {
             alert("cancelling crawl did not succeed");
