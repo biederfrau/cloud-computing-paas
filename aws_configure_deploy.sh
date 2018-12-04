@@ -9,7 +9,7 @@ aws iam create-role --role-name lambda-worker-role \
                     --assume-role-policy-document file://lambdaAssumeRolePolicyDocument.json
 
 aws iam attach-role-policy --role-name lambda-worker-role \
-                           --policy-arn arn:aws:iam::$ACCOUNT_ID:policy/service-role/AWSLambdaBasicExecutionRole-40c6177f-37ee-4319-8d26-f59e614ea503
+                           --policy-arn arn:aws:iam::aws:policy/AWSLambdaBasicExecutionRole
 
 aws iam attach-role-policy --role-name lambda-worker-role \
                            --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess

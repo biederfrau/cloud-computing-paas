@@ -20,7 +20,7 @@ aws sqs delete-queue --queue-url https://queue.amazonaws.com/$ACCOUNT_ID/queue-i
 
 # Roles
 aws iam detach-role-policy --role-name lambda-worker-role \
-                           --policy-arn arn:aws:iam::$ACCOUNT_ID:policy/service-role/AWSLambdaBasicExecutionRole-40c6177f-37ee-4319-8d26-f59e614ea503
+                           --policy-arn arn:aws:iam::aws:policy/AWSLambdaBasicExecutionRole
 
 aws iam detach-role-policy --role-name lambda-worker-role \
                            --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess
