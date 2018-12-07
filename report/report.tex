@@ -55,6 +55,23 @@
 
 \section{Implementation}
 
+We decided to implement the project using Python3. Our cloud platform of choice
+is AWS. The only dependencies the project has are
+
+\begin{itemize}
+    \item \texttt{requests}, for issuing HTTP requests,
+    \item \texttt{validators}, for validating URLs, and
+    \item \texttt{boto3}, the AWS SDK for Python.
+\end{itemize}
+
+We use DynamoDB for storage and SQS for message passing. The workers are realized
+as AWS Lambda functions. The master can be deployed using ElasticBeanstalk (AWS'
+traditional PaaS offering), which in turn uses Autoscaling, S3, Load Balancing
+and monitoring automatically, although this is not needed---the traffic on the
+master is very low.
+
+The implementation can be found \href{https://github.com/biederfrau/cloud-computing-paas}{on GitHub}.
+
 \subsection{Frontend}
 
 The frontend is a simple one-page website which communicates with the
@@ -109,6 +126,9 @@ The master runs a lightweight web server (using
 serving the frontend and offers a small REST API for querying the state of the
 crawl. This basically consists of starting the crawl and querying the workers
 and discovered edges.
+
+The master can be deployed to an EC2 instance using ElasticBeanstalk or run
+locally.
 
 \subsubsection{Worker}
 
