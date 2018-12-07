@@ -23,18 +23,18 @@ class PollingThread(threading.Thread):
             for message in self._queue_out.receive_messages(MaxNumberOfMessages=10):
                 msg = json.loads(message.body)
 
-                prev_url = msg['source']
-                url = msg['sink']
-                depth = msg['depth']
+                prev_url  = msg['source']
+                url       = msg['sink']
+                depth     = msg['depth']
+                max_depth = msg['max_depth']
 
                 if url not in self._discovered_urls:
                     print(f"{pretty.green('###')} discovered new url {url} at depth {depth}")
                     self._discovered_urls.add(url)
                     self._edges.append((prev_url, url, depth))
 
-                    if depth < self._depth: # else exploring further makes no sense
-                        out_msg = { 'url': url, 'depth': depth }
-                        self._queue_in.send_message(MessageBody=json.dumps(out_msg))
+                    out_msg = { 'url': url, 'depth': depth, 'max_depth': max_depth }
+                    self._queue_in.send_message(MessageBody=json.dumps(out_msg))
 
                 message.delete()
 

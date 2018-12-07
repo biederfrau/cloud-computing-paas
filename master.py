@@ -25,7 +25,7 @@ def start_crawl():
     depth = int(request.forms.get('depth') or 10)
 
     print(f"{pretty.green('###')} starting crawl on {url}")
-    msg = { 'url': url, 'depth': 0 }
+    msg = { 'url': url, 'depth': 0, 'max_depth': depth }
     queue_in.send_message(MessageBody=json.dumps(msg))
 
     global poll
@@ -55,6 +55,16 @@ def stop_crawl():
 @get('/progress')
 def get_progress():
     progress = { 'workers': work.workers(), 'edges': poll.edges() }
+    return json.dumps(progress)
+
+@get('/progress/workers')
+def get_progress_workers():
+    progress = { 'workers': work.workers() }
+    return json.dumps(progress)
+
+@get('/progress/edges')
+def get_progress_edges():
+    progress = { 'edges': poll.edges()  }
     return json.dumps(progress)
 
 @get('/static/<filepath:path>')

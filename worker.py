@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-from bs4 import BeautifulSoup
-
 import atexit
 import boto3
 import json
 import pretty
 import requests
+import re
 from requests.exceptions import MissingSchema
-import sys
 import time
 import validators
 import uuid
@@ -26,20 +24,24 @@ atexit.register(lambda: queue_master.send_message(MessageBody=json.dumps({"kind"
 
 while True:
     for message in queue_in.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=60):
-        msg = json.loads(message.body)
-        url = msg['url']
-        depth = msg['depth']
+        msg       = json.loads(message.body)
+        url       = msg['url']
+        depth     = msg['depth']
+        max_depth = msg['max_depth']
 
         try:
             r = requests.get(url)
         except MissingSchema:
+            message.delete()
             continue
 
-        links = BeautifulSoup(r.text, 'lxml').find_all('a')
-        for link in links:
-            href = link.get('href')
-            if not href: continue
+        if depth >= max_depth:
+            message.delete()
+            continue
 
+        hrefs = re.findall(r'href=[\'"]?([^\'" >]+)', r.text)
+
+        for href in hrefs:
             if not validators.url(href) and href != "./": # try to fix
                 if href.startswith('/'): # root-relative url
                     parsed_parent = urlparse(url)
@@ -56,9 +58,8 @@ while True:
             target = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
 
             if url == target: continue # ignore self-links (e.g. to anchors on page)
-            msg = { 'source': url, 'sink': target, 'depth': depth + 1 }
+            msg = { 'source': url, 'sink': target, 'depth': depth + 1, 'max_depth': max_depth }
             queue_out.send_message(MessageBody=json.dumps(msg))
 
-        time.sleep(3)
-
         message.delete()
+        time.sleep(3)
