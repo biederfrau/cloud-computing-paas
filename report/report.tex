@@ -1,0 +1,117 @@
+\documentclass[english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[scaled=.8]{beramono}
+\usepackage{geometry}
+\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3cm,rmargin=3cm}
+\usepackage{microtype}
+\usepackage[parfill]{parskip}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{nameref}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{fancyhdr}
+\usepackage{blindtext}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{A Team}
+\lhead{CC: PaaS}
+\cfoot{\thepage}
+
+\newcommand*{\fullref}[1]{\hyperref[{#1}]{\autoref*{#1}~\nameref*{#1}}}
+
+\definecolor{darkgray}{rgb}{0.66, 0.66, 0.66}
+\definecolor{asparagus}{rgb}{0.53, 0.66, 0.42}
+
+\lstdefinestyle{s}{
+  commentstyle=\color{darkgray},
+  keywordstyle=\bfseries,
+  morekeywords={},
+  stringstyle=\color{asparagus},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  keepspaces=true,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+}
+
+\lstset{style=s}
+
+\begin{document}
+
+\title{Cloud Computing\\PaaS: Web Crawler}
+
+\author{Sonja Biedermann \and Augusto Jose de Oliveira Martins \and Tobias Harald Herbert}
+
+\maketitle
+\tableofcontents
+
+\section{Project Description}
+
+\section{Implementation}
+
+\subsection{Frontend}
+
+The frontend is a simple one-page website which communicates with the
+master node running on EC2 and displays data derived from the crawl and
+information about the current state of the crawler.
+
+We display how many workers are currently working on the task. Since we use AWS
+Lambda, whose functions are quite short-lived, this chart sees a lot of
+activity with workers popping in and out of existence. The purpose of this
+chart is to ``visualize the cloud'', and to see how it scales.
+
+The result of the crawl is displayed as a network. Nodes are colored according
+to the host, however note that colors may be repeated. To draw the network, we
+use the constraint-based layout algorithm CoLa\footnote{\url{https://ialab.it.monash.edu/webcola/}}, which basically runs a small
+simulation and optimizes the layout. The results from this algorithm are
+excellent, but graph drawing is hard and as a consequence we limit the graph
+display to 500 edges. The performance is heavily dependent on the graph structure,
+e.g. networks with very fat hubs (e.g. Wikipedia) have noticeably worse
+performance than networks with many smaller hubs. This is due to how
+large the neighborhoods tend to be in the hubs vicinity. It also does not
+help that it is running in the browser.
+
+The graph is interactive and allows you to drag the nodes around should
+you not be satisfied with the layout. You can also click on a node to
+visit the associated webpage.
+
+Figure~\ref{fig:screenshot} shows the result of a crawl on the webpage of an
+ongoing research project. The graph shows 4 hubs: reddit (red), arXiv (green),
+Wikipedia (orange), and the web presence of the University of California in Riverside
+(blue), which is split between two involved researchers.
+
+The bottom displays the current number of discovered edges, which is equivalent
+to the amount of pages crawled, as well as the current depth. Do note that the
+typical web page has an extremely high fan out at depths of about 3 to 4, so
+the time spent at consecutive depths grows exponentially. We have thus not
+opted to display this as a progress bar, since the rate of progress is hard to
+estimate.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/screenshot}
+    \caption{Screenshot of the graph view}
+    \label{fig:screenshot}
+\end{figure}
+
+\subsection{Backend}
+
+\subsubsection{Master}
+
+The master runs a lightweight web server (using
+\href{https://bottlepy.org/docs/dev/}{Bottle}, a micro WSGI web framework)
+serving the frontend and offers a small REST API for querying the state of the
+crawl. This basically consists of starting the crawl and querying the workers
+and discovered edges.
+
+\subsubsection{Worker}
+
+\section{Setup}
+
+\end{document}
