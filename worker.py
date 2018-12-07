@@ -25,7 +25,7 @@ queue_master.send_message(MessageBody=json.dumps({"kind": "hello", "id": random_
 atexit.register(lambda: queue_master.send_message(MessageBody=json.dumps({"kind": "bye", "id": random_id})))
 
 while True:
-    for message in queue_in.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=10):
+    for message in queue_in.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=60):
         msg = json.loads(message.body)
         url = msg['url']
         depth = msg['depth']
@@ -42,12 +42,14 @@ while True:
 
             if not validators.url(href) and href != "./": # try to fix
                 if href.startswith('/'): # root-relative url
-                    href = url + href
+                    parsed_parent = urlparse(url)
+                    href = f"{parsed_parent.scheme}://{parsed_parent.netloc}{href}"
                 else: # relative url
                     href = url + ('' if url.endswith('/') else '/') + href
 
             if not validators.url(href):
                 print(f"{pretty.red('!!!')} bad url: {href}")
+                message.delete()
                 continue # give up if attempts to fix did not work
 
             parsed_url = urlparse(href)
@@ -58,5 +60,3 @@ while True:
             queue_out.send_message(MessageBody=json.dumps(msg))
 
         message.delete()
-
-    time.sleep(5)

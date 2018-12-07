@@ -16,6 +16,7 @@ work = WorkerPollingThread(queue_master)
 poll = PollingThread(queue_in, queue_out)
 
 work.start()
+poll.start()
 
 # called when url is entered from the web frontend
 @post('/crawl')
@@ -27,6 +28,12 @@ def start_crawl():
     msg = { 'url': url, 'depth': 0 }
     queue_in.send_message(MessageBody=json.dumps(msg))
 
+    global poll
+
+    poll.stop()
+    poll.join()
+
+    poll = PollingThread(queue_in, queue_out)
     poll.set_depth(depth)
     poll.start()
 
@@ -41,12 +48,6 @@ def stop_crawl():
         print(f"{pretty.red('!!!')} could not purge queues")
         response.status = 400
         return
-
-    global poll
-
-    poll.stop()
-    poll.join()
-    poll = PollingThread(queue_in, queue_out)
 
 # queried to get progress. used by frontend to visualize
 @get('/progress')
