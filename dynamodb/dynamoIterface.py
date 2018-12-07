@@ -1,7 +1,7 @@
 import boto3
-import calendar;
-import time;
+import json
 from boto3.dynamodb.conditions import Key
+
 
 def createTableUrl(tableName): 
       
@@ -11,7 +11,7 @@ def createTableUrl(tableName):
             'KeyType': 'HASH'  #Partition key
         },
         {
-            'AttributeName': 'id',
+            'AttributeName': 'message',
             'KeyType': 'RANGE'  #Sort key
         }
     ]
@@ -21,8 +21,8 @@ def createTableUrl(tableName):
             'AttributeType': 'S'
         },
         {
-            'AttributeName': 'id',
-            'AttributeType': 'N'
+            'AttributeName': 'message',
+            'AttributeType': 'S'
         },
 
     ]
@@ -34,6 +34,16 @@ def createTableUrl(tableName):
     success = createTable(tableName, keySchema, attributeDefinitions, provisionedThroughput)
 
 
+def putData(tableName, message):
+    msg = json.loads(message)
+
+    source = msg['source']
+    sink = msg['sink']
+    depth = msg['depth']
+    
+    putItemIfDoesNotExist(tableName, message, sink)
+    
+
 def createTable(tableName, keySchema, attributeDefinitions, provisionedThroughput):
     if not tableExists(tableName):
         print('table ' + tableName + ", created")
@@ -42,12 +52,11 @@ def createTable(tableName, keySchema, attributeDefinitions, provisionedThroughpu
         return True
     return False
     
-def putItemIfDoesNotExist(tableName, item):
-    if not itemExists(tableName, item):
+def putItemIfDoesNotExist(tableName, message, sink):
+    if not itemExists(tableName, sink):
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(tableName)
-        timestamp = getTimestamp()
-        response = table.put_item(TableName=tableName, Item={'url': item, 'id':timestamp})
+        response = table.put_item(TableName=tableName, Item={'message': message, 'url':sink})
         return response
     return -1
     
@@ -55,9 +64,11 @@ def getItem(tableName, url):
     if tableExists(tableName):
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(tableName)
-        response = table.get_item(Key={'url':url, 'id':0})
-        return response
-    return -1
+        fe = Key('url').eq(url)
+        response = table.scan(FilterExpression=fe)
+        for i in response['Items']:
+            return i
+        return -1
     
     
 def getEverything(tableName):
@@ -82,10 +93,6 @@ def deleteAllTables():
     for tableName in tableNames['TableNames']:
         deleteTable(tableName)
     
-def getTimestamp():
-    ts = calendar.timegm(time.gmtime())
-    return ts
-    
 def tableExists(tableName):
     response = getAllTableNames()
     for table in response['TableNames']:
@@ -96,7 +103,9 @@ def tableExists(tableName):
 def itemExists(tableName, url):
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(tableName)
-    response = table.query(KeyConditionExpression=Key('url').eq(url))
+    fe = Key('url').eq(url)
+    response = table.scan(FilterExpression=fe)
+  #  response = table.query(KeyConditionExpression=Key('url').eq(url))
     for i in response['Items']:
         return True
     return False
