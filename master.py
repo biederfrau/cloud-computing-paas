@@ -35,6 +35,8 @@ def start_crawl():
 
     poll = PollingThread(queue_in, queue_out)
     poll.set_depth(depth)
+    poll.add_root(url)
+
     poll.start()
 
 # try to stop a crawl process. note that purge can only happen every 60s

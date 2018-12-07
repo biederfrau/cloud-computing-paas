@@ -61,6 +61,9 @@ class PollingThread(threading.Thread):
     def set_depth(self, depth):
         self._depth = depth
 
+    def add_root(self, url):
+        self._discovered_urls.add(url)
+
 class WorkerPollingThread(threading.Thread):
     def __init__(self, queue, delay=1):
         super().__init__()
