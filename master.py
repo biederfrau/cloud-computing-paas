@@ -4,7 +4,7 @@ import boto3
 import json
 import pretty
 
-from bottle import get, post, delete, run, request, response, static_file, default_app
+from bottle import get, post, delete, run, request, response, static_file, redirect, default_app
 from polling_thread import PollingThread, WorkerPollingThread
 
 sqs          = boto3.resource('sqs')
@@ -55,10 +55,13 @@ def get_progress():
     progress = { 'workers': work.workers(), 'edges': poll.edges() }
     return json.dumps(progress)
 
-# replace later with nginx or something
 @get('/static/<filepath:path>')
 def serve_static(filepath):
     return static_file(filepath, root='./static')
+
+@get('/')
+def redirect_index():
+    redirect('/static/index.html')
 
 application = default_app() # this is needed by the EB WSGI
 run(host='localhost', port=8080)
