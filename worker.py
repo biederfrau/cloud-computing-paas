@@ -59,4 +59,6 @@ while True:
             msg = { 'source': url, 'sink': target, 'depth': depth + 1 }
             queue_out.send_message(MessageBody=json.dumps(msg))
 
+        time.sleep(3)
+
         message.delete()
