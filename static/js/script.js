@@ -43,6 +43,23 @@ function draw_graph_faster(json) {
         first_time = force === undefined;
 
     if(new_edges.length === 0) { return; }
+
+    if(!first_time && force.links().length > 500) {
+        let svg = d3.select("#info-graph svg");
+        let info = svg.select(".info-text");
+        if(info.empty()) {
+            svg.append("text").classed("info-text", true).text("edge limit exceeded")
+                .attr("y", 10)
+                .attr("x", $("#info-graph svg").width() - 10)
+                .attr("text-anchor", "end")
+                .attr("dominant-baseline", "hanging")
+                .attr("fill", "grey")
+        }
+
+        console.log("too many edges!");
+        return;
+    }
+
     prev_edges = json['edges'];
 
     _.each(new_edges, tup => {
@@ -99,7 +116,11 @@ function draw_graph_faster(json) {
                 .style("top", d3.event.pageY + "px").style("left", d3.event.pageX + 10 + "px")
                 .html(`<b>${d.name}</b>`)
         })
-        .on("mouseleave", () => d3.select("#tooltip").remove());
+        .on("mouseleave", () => d3.select("#tooltip").remove())
+        .on("click", d => {
+            let win = window.open(d.name, '_blank');
+            win.focus();
+        });
 
     force.on("tick", () => {
         svg.selectAll(".link")
@@ -118,25 +139,19 @@ function update_progress(url, first_time=false) {
     fetch(url).then(response => response.json()).then(json => {
         draw_instances(json);
         draw_graph_faster(json, first_time);
+
+        $("#no-edges").html(json['edges'].length);
+        $("#cur-depth").html(_.maxBy(json['edges'], 2)[2]);
     });
 }
 
-function show_nodes() {
-    $("#tab-nodes").addClass("active");
-    $("#tab-graph").removeClass("active");
+function show_content(thing) {
+    $(".tab").removeClass("active");
+    $(`#tab-${thing}`).addClass("active");
 
-    $("#info-nodes").addClass("active");
-    $("#info-graph").removeClass("active");
+    $(".info").removeClass("active");
+    $(`#info-${thing}`).addClass("active");
 }
-
-function show_graph() {
-    $("#tab-graph").addClass("active");
-    $("#tab-nodes").removeClass("active");
-
-    $("#info-graph").addClass("active");
-    $("#info-nodes").removeClass("active");
-}
-
 let updating_interval;
 $("#start").on("click", e => {
     e.preventDefault();

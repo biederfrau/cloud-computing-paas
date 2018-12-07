@@ -39,11 +39,11 @@
 
     <div style="margin-top: 60px;" class="mx-2">
       <div class="tabs">
-        <div id="tab-nodes" class="tab active" onclick="show_nodes()">
-          <span>nodes</span>
+        <div id="tab-nodes" class="tab active" onclick="show_content('nodes')">
+          <span>workers</span>
         </div>
 
-        <div id="tab-graph" class="tab" onclick="show_graph()">
+        <div id="tab-graph" class="tab" onclick="show_content('graph')">
           <span>graph</span>
         </div>
       </div>
@@ -55,6 +55,11 @@
       <div id="info-graph" class="info">
         <svg width="100%" height="100%"></svg>
       </div>
+    </div>
+
+    <div class="info-bar mx-2 mt-1">
+      discovered edges: <span id="no-edges">???</span>,
+      current depth: <span id="cur-depth">???</span>
     </div>
   </body>
 
