@@ -54,7 +54,7 @@ def stop_crawl():
 # queried to get progress. used by frontend to visualize
 @get('/progress')
 def get_progress():
-    progress = { 'workers': work.workers(), 'edges': poll.edges() }
+    progress = { 'workers': work.workers(), 'edges': poll.edges(), 'n': queue_in.attributes['ApproximateNumberOfMessages'] }
     return json.dumps(progress)
 
 @get('/progress/workers')

@@ -142,6 +142,7 @@ function update_progress(url, first_time=false) {
 
         $("#no-edges").html(json['edges'].length);
         $("#cur-depth").html(_.maxBy(json['edges'], 2)[2]);
+        $("#no-messages").html(json['n']);
     });
 }
 
