@@ -14,7 +14,7 @@ class DBWrapper():
         return 'Item' in r
 
     def store_url(self, url):
-        self._visited_urls.put_item(TableName='visited_urls', Item={'url': url})
+        self._visited_urls.put_item(Item={'url': url})
 
     def store_edge(self, source, sink, depth=0):
         self._edges.put_item(Item={'source_sink': f"{source}_{sink}", 'source': source, 'sink': sink, 'depth': depth})
