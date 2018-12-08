@@ -81,18 +81,19 @@ information about the current state of the crawler.
 We display how many workers are currently working on the task. Since we use AWS
 Lambda, whose functions are quite short-lived, this chart sees a lot of
 activity with workers popping in and out of existence. The purpose of this
-chart is to ``visualize the cloud'', and to see how it scales.
+chart is to ``visualize the cloud'' and see how it scales.
 
 The result of the crawl is displayed as a network. Nodes are colored according
 to the host, however note that colors may be repeated. To draw the network, we
-use the constraint-based layout algorithm CoLa\footnote{\url{https://ialab.it.monash.edu/webcola/}}, which basically runs a small
-simulation and optimizes the layout. The results from this algorithm are
-excellent, but graph drawing is hard and as a consequence we limit the graph
-display to 500 edges. The performance is heavily dependent on the graph structure,
-e.g. networks with very fat hubs (e.g. Wikipedia) have noticeably worse
-performance than networks with many smaller hubs. This is due to how
-large the neighborhoods tend to be in the hubs vicinity. It also does not
-help that it is running in the browser.
+use the constraint-based layout algorithm
+CoLa\footnote{\url{https://ialab.it.monash.edu/webcola/}}, which basically runs
+a small simulation and optimizes the layout. The results from this algorithm
+are excellent, but graph drawing is hard and as a consequence we limit the
+graph display to 500 edges. The performance is heavily dependent on the graph
+structure, e.g. networks with very fat hubs (e.g. Wikipedia) have noticeably
+worse performance than networks with many smaller hubs. This is due to how
+large the neighborhoods tend to be in the hubs vicinity. It also does not help
+that it is running in the browser.
 
 The graph is interactive and allows you to drag the nodes around should
 you not be satisfied with the layout. You can also click on a node to
@@ -133,5 +134,38 @@ locally.
 \subsubsection{Worker}
 
 \section{Setup}
+
+We have included setup scripts in \texttt{setup}. They create all resources
+used and also set up the needed policies. % make it so this sentence is true
+
+\subsection{Master}
+
+You can either run the master locally using the \texttt{master.py} contained
+in the project root. It serves on port 8080.
+
+If you want to deploy it via ElasticBeanstalk, do the following at project
+root:
+
+\begin{verbatim}
+$ cd eb_master
+$ make
+\end{verbatim}
+
+The Makefile copies the files properly, runs the EB CLI commands to get
+everything ready, attaches the needed policies to your user and also the EC2
+instance role which will run the application, and then launches the application
+in your default browser. We presume that the AWS and EB CLI are installed and
+set up properly.
+
+Once the master is up and running, you can deploy the worker as described in
+the next section. The ordering between master and worker is not actually
+important.
+
+To terminate the EC2 instance and clean up the files run \texttt{make clean}
+later. Please be aware that deletion will take a bit to take effect. Also, the
+output tells you that it is fine to Ctrl+C, but don't---while interrupting the
+EB CLI (who produces the output) is fine, interrupting \texttt{make} is not.
+
+\subsection{Worker(s)}
 
 \end{document}
