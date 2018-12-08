@@ -141,6 +141,7 @@ function update_progress(url, first_time=false) {
         draw_graph_faster(json, first_time);
 
         $("#no-edges").html(json['edges'].length);
+        $("#no-edges").html(json['nodes'].length);
         $("#cur-depth").html(_.maxBy(json['edges'], 2)[2]);
         $("#no-messages").html(json['n']);
     });
