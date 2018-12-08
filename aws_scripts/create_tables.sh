@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/bin/bash
+
 
 aws dynamodb create-table --table-name visited_urls \
         --attribute-definitions AttributeName=url,AttributeType=S \

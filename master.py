@@ -10,8 +10,8 @@ from dynamodb.db_wrapper import DBWrapper
 
 sqs          = boto3.resource('sqs')
 db           = boto3.resource('dynamodb')
-queue_in     = sqs.get_queue_by_name(QueueName='queue-in-testing')
-queue_master = sqs.get_queue_by_name(QueueName='queue-master-testing')
+queue_in     = sqs.get_queue_by_name(QueueName='queue-in')
+queue_master = sqs.get_queue_by_name(QueueName='queue-master')
 
 dbw = DBWrapper(db)
 work = WorkerPollingThread(queue_master)
@@ -35,6 +35,8 @@ def stop_crawl():
     try:
         dbw.clear()
         queue_in.purge()
+        queue_master.purge()
+        work.clear()
     except:
         print(f"{pretty.red('!!!')} could not purge queues")
         response.status = 400
@@ -44,11 +46,11 @@ def stop_crawl():
 @get('/progress')
 def get_progress():
     queue_in.load()
-    edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_edges()]
+    edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_webgraph()]
     progress = {
         'workers': work.workers(),
         'edges': edges,
-        'nodes': dbw.get_urls(),
+        'nodes': dbw.get_visited_urls(),
         'n': queue_in.attributes['ApproximateNumberOfMessages']
     }
 
@@ -61,7 +63,7 @@ def get_progress_workers():
 
 @get('/progress/edges')
 def get_progress_edges():
-    edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_edges()]
+    edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_webgraph()]
     progress = { 'edges': edges }
     return json.dumps(progress)
 

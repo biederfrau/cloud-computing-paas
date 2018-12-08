@@ -9,20 +9,20 @@ class DBWrapper():
         self._visited_urls = DB.Table('visited_urls')
         self._edges = DB.Table('edges')
 
-    def url_visited(self, url):
+    def has_url_been_visited(self, url):
         r = self._visited_urls.get_item(Key={'url': url})
         return 'Item' in r
 
-    def store_url(self, url):
+    def mark_url_as_visited(self, url):
         self._visited_urls.put_item(Item={'url': url})
 
-    def store_edge(self, source, sink, depth=0):
+    def add_url_to_webgraph(self, source, sink, depth=0):
         self._edges.put_item(Item={'source_sink': f"{source}_{sink}", 'source': source, 'sink': sink, 'depth': depth})
 
-    def get_urls(self):
+    def get_visited_urls(self):
         return self._visited_urls.scan()['Items']
 
-    def get_edges(self):
+    def get_webgraph(self):
         return self._edges.scan()['Items']
 
     def clear(self):
