@@ -64,11 +64,11 @@ while True:
             if url == target: continue # ignore self-links (e.g. to anchors on page)
 
             dbw.add_url_to_webgraph(url, target, depth + 1)
-            dbw.mark_url_as_visited(url)
 
             if depth + 1 < max_depth:
                 msg = { 'source': url, 'sink': target, 'depth': depth + 1, 'max_depth': max_depth }
                 queue_in.send_message(MessageBody=json.dumps(msg))
 
+        dbw.mark_url_as_visited(url)
         message.delete()
         time.sleep(3)
