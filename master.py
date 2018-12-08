@@ -68,4 +68,5 @@ def redirect_index():
     redirect('/static/index.html')
 
 application = default_app() # this is needed by the EB WSGI
-run(host='localhost', port=8080)
+if __name__ == '__main__':
+    run(host='localhost', port=8080)
