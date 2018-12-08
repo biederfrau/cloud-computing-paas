@@ -45,7 +45,13 @@ def stop_crawl():
 def get_progress():
     queue_in.load()
     edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_edges()]
-    progress = { 'workers': work.workers(), 'edges': edges, 'nodes': dbw.get_urls(),'n': queue_in.attributes['ApproximateNumberOfMessages'] }
+    progress = {
+        'workers': work.workers(),
+        'edges': edges,
+        'nodes': dbw.get_urls(),
+        'n': queue_in.attributes['ApproximateNumberOfMessages']
+    }
+
     return json.dumps(progress)
 
 @get('/progress/workers')
@@ -56,7 +62,7 @@ def get_progress_workers():
 @get('/progress/edges')
 def get_progress_edges():
     edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_edges()]
-    progress = { 'edges': edges  }
+    progress = { 'edges': edges }
     return json.dumps(progress)
 
 @get('/static/<filepath:path>')
