@@ -2,64 +2,66 @@ import boto3
 import json
 import pretty
 import requests
-import validators
-import uuid
+import re
 import time
-
+import validators
+import socket
+import os
+import uuid
+from urllib.parse import urlparse
 from requests.exceptions import MissingSchema
-from bs4 import BeautifulSoup
+from dynamodb.db_wrapper import DBWrapper
 
 
 def consume_queue_in(event, context):
     sqs = boto3.resource('sqs')
-    queue_out = sqs.get_queue_by_name(QueueName='queue-out')
+    db = boto3.resource('dynamodb')
+    queue_in = sqs.get_queue_by_name(QueueName='queue-in')
     queue_master = sqs.get_queue_by_name(QueueName='queue-master')
 
-    print("sending hello to master")
-    random_id = str(uuid.uuid4())
-    queue_master.send_message(MessageBody=json.dumps({"kind": "hello", "id": random_id}))
+    lambda_id = socket.gethostname() + '_' + str(os.getpid()) + '_' + str(uuid.uuid4())
+    print("sending hello to master from ", lambda_id)
+    queue_master.send_message(MessageBody=json.dumps({"kind": "hello", "id": lambda_id}))
 
-    # queue_master.send_message(MessageBody="hello master!")
-    # queue_out.send_message(MessageBody="hello out!")
-
-    # sqs = boto3.resource('sqs')
-    # worker_feedback_queue = sqs.get_queue_by_name(QueueName='queue-out')
-    # for record in event['Records']:
-    #     url = record["body"]
-    #     worker_feedback_queue.send_message(MessageBody=url)
-    #     print('The URL is ', url)
+    dbw = DBWrapper(db)
 
     for record in event['Records']:
         print(record["body"])
         msg = json.loads(record["body"])
-        url = msg['url']
+        url = msg['sink']
         depth = msg['depth']
+        max_depth = msg['max_depth']
 
-        print(url, depth)
+        if dbw.has_url_been_visited(url):
+            continue
+
+        print('here 1')
 
         try:
             r = requests.get(url)
-        except MissingSchema:
-            continue
-
-        print("request returned")
-
-        try:
-            links = BeautifulSoup(r.text, 'lxml').find_all('a')
-        except Exception as e:
+        except MissingSchema as e:
+            print('here 2')
             print(e)
             continue
 
-        print(len(links))
-        for link in links:
-            print(link)
+        dbw.mark_url_as_visited(url)
 
-            href = link.get('href')
-            if not href: continue
+        print('here 3')
 
+        try:
+            hrefs = re.findall(r'href=[\'"]?([^\'" >]+)', r.text)
+        except:
+            print('here 4')
+            continue
+
+        print('here 5')
+
+        for href in hrefs:
+            print(href)
             if not validators.url(href) and href != "./":  # try to fix
                 if href.startswith('/'):  # root-relative url
-                    href = url + href
+                    parsed_parent = urlparse(url)
+                    href = f"{parsed_parent.scheme}://{parsed_parent.netloc}{href}"
                 else:  # relative url
                     href = url + ('' if url.endswith('/') else '/') + href
 
@@ -71,9 +73,13 @@ def consume_queue_in(event, context):
             target = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
 
             if url == target: continue  # ignore self-links (e.g. to anchors on page)
-            msg = {'source': url, 'sink': target, 'depth': depth + 1}
-            queue_out.send_message(MessageBody=json.dumps(msg))
 
-    # time.sleep(5)
+            dbw.add_url_to_webgraph(url, target, depth + 1)
 
-    queue_master.send_message(MessageBody=json.dumps({"kind": "bye", "id": random_id}))
+            if depth + 1 < max_depth:
+                msg = {'source': url, 'sink': target, 'depth': depth + 1, 'max_depth': max_depth}
+                queue_in.send_message(MessageBody=json.dumps(msg))
+
+    time.sleep(1)
+    print("sending bye to master from ", lambda_id)
+    queue_master.send_message(MessageBody=json.dumps({"kind": "bye", "id": lambda_id}))

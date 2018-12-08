@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 ACCOUNT_ID=`aws sts get-caller-identity --output text --query 'Account'`
 REGION=`aws configure get region`
 
@@ -14,15 +15,12 @@ aws iam attach-role-policy --role-name lambda-worker-role \
 aws iam attach-role-policy --role-name lambda-worker-role \
                            --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess
 
-
-# Queues
-aws sqs create-queue --queue-name queue-in
-aws sqs create-queue --queue-name queue-out
-aws sqs create-queue --queue-name queue-master
+aws iam attach-role-policy --role-name lambda-worker-role \
+                           --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
 
 
-# Lambda
-./aws_make_lambda.sh
+
+./make_lambda.sh
 
 aws lambda create-function --function-name QueueInConsumer \
                            --runtime python3.7 \
@@ -33,4 +31,4 @@ aws lambda create-function --function-name QueueInConsumer \
 
 aws lambda create-event-source-mapping --function-name QueueInConsumer \
                                        --event-source-arn arn:aws:sqs:$REGION:$ACCOUNT_ID:queue-in \
-                                       --batch-size 10
+                                       --batch-size 1

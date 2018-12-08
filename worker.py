@@ -39,7 +39,7 @@ while True:
             message.delete()
             continue
 
-        if dbw.url_visited(url):
+        if dbw.has_url_been_visited(url):
             message.delete()
             continue
 
@@ -63,8 +63,8 @@ while True:
 
             if url == target: continue # ignore self-links (e.g. to anchors on page)
 
-            dbw.store_edge(url, target, depth + 1)
-            dbw.store_url(url)
+            dbw.add_url_to_webgraph(url, target, depth + 1)
+            dbw.mark_url_as_visited(url)
 
             if depth + 1 < max_depth:
                 msg = { 'source': url, 'sink': target, 'depth': depth + 1, 'max_depth': max_depth }
