@@ -56,7 +56,6 @@ while True:
 
             if not validators.url(href):
                 print(f"{pretty.red('!!!')} bad url: {href}")
-                message.delete()
                 continue # give up if attempts to fix did not work
 
             parsed_url = urlparse(href)
