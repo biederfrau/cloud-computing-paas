@@ -12,20 +12,24 @@ import validators
 import uuid
 from urllib.parse import urlparse
 
+from dynamodb.db_wrapper import DBWrapper
+
 sqs          = boto3.resource('sqs')
-queue_in     = sqs.get_queue_by_name(QueueName='queue-in')
-queue_out    = sqs.get_queue_by_name(QueueName='queue-out')
-queue_master = sqs.get_queue_by_name(QueueName='queue-master')
+db           = boto3.resource('dynamodb')
+queue_in     = sqs.get_queue_by_name(QueueName='queue-in-testing')
+queue_master = sqs.get_queue_by_name(QueueName='queue-master-testing')
 
 print("sending hello to master")
 random_id = str(uuid.uuid4())
 queue_master.send_message(MessageBody=json.dumps({"kind": "hello", "id": random_id}))
 atexit.register(lambda: queue_master.send_message(MessageBody=json.dumps({"kind": "bye", "id": random_id})))
 
+dbw = DBWrapper(db)
+
 while True:
     for message in queue_in.receive_messages(MaxNumberOfMessages=10, VisibilityTimeout=60):
         msg       = json.loads(message.body)
-        url       = msg['url']
+        url       = msg['sink']
         depth     = msg['depth']
         max_depth = msg['max_depth']
 
@@ -35,12 +39,13 @@ while True:
             message.delete()
             continue
 
-        if depth >= max_depth:
+        if dbw.url_visited(url):
             message.delete()
             continue
 
         hrefs = re.findall(r'href=[\'"]?([^\'" >]+)', r.text)
 
+        print(url)
         for href in hrefs:
             if not validators.url(href) and href != "./": # try to fix
                 if href.startswith('/'): # root-relative url
@@ -58,8 +63,13 @@ while True:
             target = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
 
             if url == target: continue # ignore self-links (e.g. to anchors on page)
-            msg = { 'source': url, 'sink': target, 'depth': depth + 1, 'max_depth': max_depth }
-            queue_out.send_message(MessageBody=json.dumps(msg))
+
+            dbw.store_edge(url, target, depth + 1)
+            dbw.store_url(url)
+
+            if depth + 1 < max_depth:
+                msg = { 'source': url, 'sink': target, 'depth': depth + 1, 'max_depth': max_depth }
+                queue_in.send_message(MessageBody=json.dumps(msg))
 
         message.delete()
         time.sleep(3)

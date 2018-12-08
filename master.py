@@ -5,18 +5,18 @@ import json
 import pretty
 
 from bottle import get, post, delete, run, request, response, static_file, redirect, default_app
-from polling_thread import PollingThread, WorkerPollingThread
+from polling_thread import WorkerPollingThread
+from dynamodb.db_wrapper import DBWrapper
 
 sqs          = boto3.resource('sqs')
-queue_in     = sqs.get_queue_by_name(QueueName='queue-in')
-queue_out    = sqs.get_queue_by_name(QueueName='queue-out')
-queue_master = sqs.get_queue_by_name(QueueName='queue-master')
+db           = boto3.resource('dynamodb')
+queue_in     = sqs.get_queue_by_name(QueueName='queue-in-testing')
+queue_master = sqs.get_queue_by_name(QueueName='queue-master-testing')
 
+dbw = DBWrapper(db)
 work = WorkerPollingThread(queue_master)
-poll = PollingThread(queue_in, queue_out)
 
 work.start()
-poll.start()
 
 # called when url is entered from the web frontend
 @post('/crawl')
@@ -25,27 +25,16 @@ def start_crawl():
     depth = int(request.forms.get('depth') or 10)
 
     print(f"{pretty.green('###')} starting crawl on {url}")
-    msg = { 'url': url, 'depth': 0, 'max_depth': depth }
+    msg = { 'sink': url, 'depth': 0, 'max_depth': depth }
     queue_in.send_message(MessageBody=json.dumps(msg))
-
-    global poll
-
-    poll.stop()
-    poll.join()
-
-    poll = PollingThread(queue_in, queue_out)
-    poll.set_depth(depth)
-    poll.add_root(url)
-
-    poll.start()
 
 # try to stop a crawl process. note that purge can only happen every 60s
 @delete('/crawl')
 def stop_crawl():
     print(f"{pretty.green('###')} trying to stop crawl")
     try:
+        dbw.clear()
         queue_in.purge()
-        queue_out.purge()
     except:
         print(f"{pretty.red('!!!')} could not purge queues")
         response.status = 400
@@ -54,7 +43,9 @@ def stop_crawl():
 # queried to get progress. used by frontend to visualize
 @get('/progress')
 def get_progress():
-    progress = { 'workers': work.workers(), 'edges': poll.edges(), 'n': queue_in.attributes['ApproximateNumberOfMessages'] }
+    queue_in.load()
+    edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_edges()]
+    progress = { 'workers': work.workers(), 'edges': edges, 'nodes': dbw.get_urls(),'n': queue_in.attributes['ApproximateNumberOfMessages'] }
     return json.dumps(progress)
 
 @get('/progress/workers')
@@ -64,7 +55,8 @@ def get_progress_workers():
 
 @get('/progress/edges')
 def get_progress_edges():
-    progress = { 'edges': poll.edges()  }
+    edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_edges()]
+    progress = { 'edges': edges  }
     return json.dumps(progress)
 
 @get('/static/<filepath:path>')
