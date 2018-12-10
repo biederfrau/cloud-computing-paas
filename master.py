@@ -58,13 +58,14 @@ def get_progress():
 
 @get('/progress/workers')
 def get_progress_workers():
-    progress = { 'workers': work.workers() }
+    queue_in.load()
+    progress = { 'workers': work.workers(), 'n': queue_in.attributes['ApproximateNumberOfMessages'] }
     return json.dumps(progress)
 
-@get('/progress/edges')
+@get('/progress/graph')
 def get_progress_edges():
     edges = [(r['source'], r['sink'], int(r['depth'])) for r in dbw.get_webgraph()]
-    progress = { 'edges': edges }
+    progress = { 'edges': edges, 'nodes': dbw.get_visited_urls() }
     return json.dumps(progress)
 
 @get('/static/<filepath:path>')
