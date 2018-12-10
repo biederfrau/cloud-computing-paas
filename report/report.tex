@@ -133,6 +133,17 @@ locally.
 
 \subsubsection{Worker}
 
+\subsubsection{Storage}
+The storage is realized with DynamoDB which is built for handling large amounts of reads and writes up to millions per second.
+As the amount of writes scale exponentially with the crawler, it has to have the ability to scale accordingly which DynamoDB provides.
+It works with a key:value store, is document driven and fully managed.
+The data we need to store is quite simple as it is at most a JSON object with three attributes stored in DynamoDB as a String. 
+The attributes are the source link, the link found on the website of the source link and the depth or layer of the crawl.
+The implementation of the database consists of all function calls to write files to the database, check if an item is in the database and
+retrieve both a single item as well as all items in a table. These building blocks allow the master to retrieve data about all the edges
+required to draw the graph and it allows the workers to check if the retrieved url is already in the database and if not to write it to the
+database together with its source link and the depth of the crawl.
+
 \section{Setup}
 
 We have included setup scripts in \texttt{setup}. They create all resources
@@ -167,5 +178,9 @@ output tells you that it is fine to Ctrl+C, but don't---while interrupting the
 EB CLI (who produces the output) is fine, interrupting \texttt{make} is not.
 
 \subsection{Worker(s)}
+
+\subsection{Storage}
+The setup of the DynamoDB requires permissions of the user and the creation of the tables.
+Both are provided as scripts as part of the automation in the build process and are included in the Makefile.
 
 \end{document}
