@@ -1,6 +1,7 @@
 init:
 	cp -r ../dynamodb ../pretty.py ../polling_thread.py ../static ../requirements.txt .
 	cp ../master.py application.py
+	sed -i -e "s/AWS_DEFAULT_REGION: .*/AWS_DEFAULT_REGION: '$(aws configure get region)'/g" 01_envar.config
 	eb init -p python-3.6 eb-master --region us-east-2
 	@echo "this will take about 5 minutes now"
 	-eb create eb-master-env
