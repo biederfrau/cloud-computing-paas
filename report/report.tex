@@ -53,6 +53,17 @@
 
 \section{Project Description}
 
+We implemented a Web Crawler which can be pointed at a URL and will then follow
+links until it reaches a user provides depth at which it should stop. The
+output is a collection of nodes and the edges connecting them, i.e. a graph of
+the neighborhood of the root URL.
+
+We visualize the result and also the progress as a graph. We also visualize
+the amount of workers (i.e., the entities doing the webpage parsing) during
+execution.
+
+The resulting graph is acyclical, no page is visited more than once.
+
 \section{Implementation}
 
 We decided to implement the project using Python3. Our cloud platform of choice
@@ -68,7 +79,7 @@ We use DynamoDB for storage and SQS for message passing. The workers are realize
 as AWS Lambda functions. The master can be deployed using ElasticBeanstalk (AWS'
 traditional PaaS offering), which in turn uses Autoscaling, S3, Load Balancing
 and monitoring automatically, although this is not needed---the traffic on the
-master is very low.
+master is very low and it runs just fine locally.
 
 The implementation can be found \href{https://github.com/biederfrau/cloud-computing-paas}{on GitHub}.
 
@@ -133,11 +144,21 @@ locally.
 
 \subsubsection{Worker}
 
+The workers are realized as AWS Lambda functions. Lambdas lend themselves naturally
+to this task---processing an event (i.e., a new URL which was discovered) is short
+and need not store any state except for storing the result. Events are distributed
+using a message queue, which is the trigger for the function.
+
+Doing this, we let AWS Lambda take the wheel completely---we do not need to worry
+about any aspect of execution and will only be billed what is truly needed, which
+would be very hard to gauge for ourselves.
+
 \subsubsection{Storage}
+
 The storage is realized with DynamoDB which is built for handling large amounts of reads and writes up to millions per second.
 As the amount of writes scale exponentially with the crawler, it has to have the ability to scale accordingly which DynamoDB provides.
 It works with a key:value store, is document driven and fully managed.
-The data we need to store is quite simple as it is at most a JSON object with three attributes stored in DynamoDB as a String. 
+The data we need to store is quite simple as it is at most a JSON object with three attributes stored in DynamoDB as a String.
 The attributes are the source link, the link found on the website of the source link and the depth or layer of the crawl.
 The implementation of the database consists of all function calls to write files to the database, check if an item is in the database and
 retrieve both a single item as well as all items in a table. These building blocks allow the master to retrieve data about all the edges
