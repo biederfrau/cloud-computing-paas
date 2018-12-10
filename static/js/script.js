@@ -26,7 +26,7 @@ function draw_instances(json) {
     let nodes_g = nodes.enter().append("g").classed("node", true)
 
     nodes_g.append("text")
-        .attr("dy", ".35em").attr("y", d => d.children ? -20 : 20)
+        .attr("dy", ".35em").attr("y", d => d.children ? -35 : 20)
         .style("text-anchor", "middle")
         .text((d, i) => d.data.name === "master" ? "master" : `worker${i}`);
 
@@ -135,15 +135,20 @@ function draw_graph_faster(json) {
     });
 }
 
-function update_progress(url, first_time=false) {
+function update_workers(url) {
     fetch(url).then(response => response.json()).then(json => {
         draw_instances(json);
+        $("#no-messages").html(json['n']);
+    });
+}
+
+function update_graph(url, first_time=false) {
+    fetch(url).then(response => response.json()).then(json => {
         draw_graph_faster(json, first_time);
 
         $("#no-edges").html(json['edges'].length);
-        $("#no-edges").html(json['nodes'].length);
+        $("#no-nodes").html(json['nodes'].length);
         $("#cur-depth").html(_.maxBy(json['edges'], 2)[2]);
-        $("#no-messages").html(json['n']);
     });
 }
 
@@ -167,8 +172,11 @@ $("#start").on("click", e => {
             $("#start").attr("disabled", true);
             $(".stop").show()
 
-            setTimeout(update_progress, 1000, '/progress', true);
-            updating_interval = setInterval(update_progress, 10000, '/progress');
+            setTimeout(update_workers, 500, '/progress/workers', true);
+            updating_interval = setInterval(update_workers, 1000, '/progress/workers');
+
+            setTimeout(update_graph, 500, '/progress/graph', true);
+            updating_interval = setInterval(update_graph, 5000, '/progress/graph');
         } else {
             alert("error: did not start crawl");
         }
