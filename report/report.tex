@@ -153,6 +153,8 @@ Doing this, we let AWS Lambda take the wheel completely---we do not need to worr
 about any aspect of execution and will only be billed what is truly needed, which
 would be very hard to gauge for ourselves.
 
+Out of the box, AWS allows 1,000 lambdas be running in parallel. It is possible to increase this number, however, additional procedures are necessary. The time spent waiting for IO operation is critical to this application. Non-blocking IO can further improve the parallelisms of the system and decreasing the cost since a lambda function don't need to sit idle waiting to HTTP responses.
+
 \subsubsection{Storage}
 
 The storage is realized with DynamoDB which is built for handling large amounts of reads and writes up to millions per second.
@@ -200,8 +202,24 @@ EB CLI (who produces the output) is fine, interrupting \texttt{make} is not.
 
 \subsection{Worker(s)}
 
+The setup and the deployment of the web crawler lambda function have few steps. The directory \texttt{aws\_scripts} stores the scripts used here. The first two steps are the setup of the infrastructure that used by the lambda (queues and DynamoDB). The role lambda-worker-role has the policies to grant the necessary permissions to use these resources. The \texttt{lambda\_worker.py} stores the actual function. The python code and the libraries not provided by the runtime environment are packaged in a ZIP file to be deployed in the AWS, see \texttt{make\_lambda.sh} to further details. The last two steps are the creation of the lambda function QueueInConsumer and mapping one of the queues to it. The script \texttt{create\_all.sh} wraps all the steps described here.
+
 \subsection{Storage}
 The setup of the DynamoDB requires permissions of the user and the creation of the tables.
 Both are provided as scripts as part of the automation in the build process and are included in the Makefile.
+
+\section{Cost Analysis}
+
+The following analysis considers that we have ten lambdas running in parallel and the throughput of ten URLs per second per lambda. These translate to about 260 millions of URLs per month (10*10*3600*24*365/12) if the system runs at peak efficiency.
+
+
+\begin{itemize}
+    \item The lambda instances consuming less than 128MB of RAM cost US\$ 55 per month (US\$ 0.00000208 per second per instance).
+    \item We need to hit the database at least two times per URL; one read to check if it is new, and one write the page. Provisioning the DynamoDB throughput of 100 reads and writes per second with item size of 1 KB is about US\$ 40.
+    \item Considering that each page takes 1KB, the storage cost is about US\$ 65.
+    \item The standard queue costs US\$0.00000040 per request, therefore, US\$ 105 per month. , for issuing HTTP requests,
+\end{itemize}
+
+This estimation is far from comprehensive. However, it gives a lower bound of US\$ 1 per million of URLs to gather them.
 
 \end{document}

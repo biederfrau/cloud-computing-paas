@@ -1,6 +1,6 @@
 #!/bin/bash
 
 
-./delete_queues
-./delete_tables
-./delete_lambda
+./delete_queues.sh
+./delete_tables.sh
+./delete_lambda.sh

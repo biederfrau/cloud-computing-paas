@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 USER=$(aws iam get-user --output text --query User.UserName)
 
 aws iam attach-policy --user-name $USER --policy-arn arn:aws:iam::aws:policy/AWSLambdaFullAccess
@@ -14,3 +17,4 @@ aws iam attach-policy --user-name $USER --policy-arn arn:aws:iam::aws:policy/AWS
 aws iam attach-policy --user-name $USER --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
 aws iam attach-policy --user-name $USER --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess
 aws iam attach-policy --user-name $USER --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess
+cd

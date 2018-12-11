@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-ACCOUNT_ID=`aws sts get-caller-identity --output text --query 'Account'`
-REGION=`aws configure get region`
+ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
+REGION=$(aws configure get region)
 
 
 # Roles

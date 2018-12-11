@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 USER=$(aws iam get-user --output text --query User.UserName)
 
 aws iam detach-policy --user-name $USER --policy-arn arn:aws:iam::aws:policy/AWSLambdaFullAccess
