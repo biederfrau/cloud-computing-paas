@@ -222,4 +222,46 @@ The following analysis considers that we have ten lambdas running in parallel an
 
 This estimation is far from comprehensive. However, it gives a lower bound of US\$ 1 per million of URLs to gather them.
 
+\section{Performance}
+
+CloudWatch is the dedicated Monitoring tool of AWS and offers a wide variety of configuration options to display different charts and correlate data.
+It offers intersting insights into the performance of the DynamoDB and the Worker Lambdas. The key metrics for a crawl are the Duration of the Lambdas
+and the Latency of Reads and Writes for DynamodB as well as the number of Lambdas invoked at any given time.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{img/CloudWatchDynamoDBPutItemAverageLatency}
+    \caption{Average Latency in ms for an Item to be put into DynamoDB}
+    \label{fig:screenshot}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/CloudWatchDynamoDBReadCapacityUnitsSum}
+    \caption{Number of Reads from DynamoDB}
+    \label{fig:screenshot}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/CloudWatchDynamoDBReturnedItemCountSum}
+    \caption{Number of Items returned from DynamoDB}
+    \label{fig:screenshot}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/CloudWatchLambdaDurationAverage}
+    \caption{Average Duration of the Worker Lambda}
+    \label{fig:screenshot}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{img/CloudWatchLambdaInvocationsSum}
+    \caption{Sum of Invocations of the Worker Lambda}
+    \label{fig:screenshot}
+\end{figure}
+
+
 \end{document}
