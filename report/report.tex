@@ -75,10 +75,10 @@ is AWS. The only dependencies the project has are
     \item \texttt{boto3}, the AWS SDK for Python.
 \end{itemize}
 
-We use DynamoDB for storage and SQS for message passing. The workers are realized
-as AWS Lambda functions. The master can be deployed using ElasticBeanstalk (AWS'
-traditional PaaS offering), which in turn uses Autoscaling, S3, Load Balancing
-and monitoring automatically, although this is not needed---the traffic on the
+We use DynamoDB for storage and SQS for message passing. The workers are
+realized as AWS Lambda functions. The master can be deployed using
+ElasticBeanstalk, which in turn uses Autoscaling, S3, Load Balancing and
+monitoring automatically, although this is not needed---the traffic on the
 master is very low and it runs just fine locally.
 
 The implementation can be found \href{https://github.com/biederfrau/cloud-computing-paas}{on GitHub}.
